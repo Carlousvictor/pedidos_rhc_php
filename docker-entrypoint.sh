@@ -12,7 +12,8 @@ done
 # Run migrations
 php artisan migrate --force 2>/dev/null || true
 
-# Seed database
+# Seed database (unidades + usuarios + itens)
+php artisan db:seed --force 2>/dev/null || true
 php artisan db:seed --class=NovosItensSeeder --force 2>/dev/null || true
 
 # Clear any stale caches

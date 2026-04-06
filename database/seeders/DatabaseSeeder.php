@@ -10,6 +10,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Skip if already seeded
+        if (DB::table('unidades')->count() > 0) {
+            return;
+        }
+
         // Unidades (from original system)
         $unidades = [
             'HOSPITAL CASA EVANGELICO',
