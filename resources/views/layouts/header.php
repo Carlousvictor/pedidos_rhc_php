@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'RHC Pedidos')</title>
+    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <title><?= e($__title ?? "RHC Pedidos") ?></title>
     <link rel="icon" type="image/png" href="/logo.png">
 
     <!-- Inter Font -->
@@ -544,13 +544,13 @@
         }
     </style>
 
-    @yield('styles')
+    <?= $__styles ?? "" ?>
 </head>
 <body>
-    @php
+    <?php 
         $usuario = session('usuario');
         $modulos = $usuario->permissoes['modulos'] ?? [];
-    @endphp
+     ?>
 
     <!-- Navbar -->
     <nav class="rhc-navbar">
@@ -573,54 +573,54 @@
                 <!-- Nav links -->
                 <ul class="rhc-nav-links">
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('/') ? 'active' : '' }}" href="/">
+                        <a class="rhc-nav-link <?= e(Request::is('/') ? 'active' : '') ?>" href="/">
                             <i class="fas fa-list fa-sm"></i> Pedidos
                         </a>
                     </li>
-                    @if($modulos['criar_pedido'] ?? false)
+                    <?php if ($modulos['criar_pedido'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('pedidos/novo') ? 'active' : '' }}" href="/pedidos/novo">
+                        <a class="rhc-nav-link <?= e(Request::is('pedidos/novo') ? 'active' : '') ?>" href="/pedidos/novo">
                             <i class="fas fa-plus-circle fa-sm"></i> Novo Pedido
                         </a>
                     </li>
-                    @endif
-                    @if($modulos['historico'] ?? false)
+                    <?php endif; ?>
+                    <?php if ($modulos['historico'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('historico*') ? 'active' : '' }}" href="/historico">
+                        <a class="rhc-nav-link <?= e(Request::is('historico*') ? 'active' : '') ?>" href="/historico">
                             <i class="fas fa-clock-rotate-left fa-sm"></i> Histórico
                         </a>
                     </li>
-                    @endif
-                    @if($modulos['itens'] ?? false)
+                    <?php endif; ?>
+                    <?php if ($modulos['itens'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('itens*') ? 'active' : '' }}" href="/itens">
+                        <a class="rhc-nav-link <?= e(Request::is('itens*') ? 'active' : '') ?>" href="/itens">
                             <i class="fas fa-boxes-stacked fa-sm"></i> Itens
                         </a>
                     </li>
-                    @endif
-                    @if($modulos['relatorios'] ?? false)
+                    <?php endif; ?>
+                    <?php if ($modulos['relatorios'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('relatorios*') ? 'active' : '' }}" href="/relatorios">
+                        <a class="rhc-nav-link <?= e(Request::is('relatorios*') ? 'active' : '') ?>" href="/relatorios">
                             <i class="fas fa-chart-bar fa-sm"></i> Relatórios
                         </a>
                     </li>
-                    @endif
-                    @if($modulos['transferencias'] ?? false)
+                    <?php endif; ?>
+                    <?php if ($modulos['transferencias'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('transferencias*') ? 'active' : '' }}" href="/transferencias">
+                        <a class="rhc-nav-link <?= e(Request::is('transferencias*') ? 'active' : '') ?>" href="/transferencias">
                             <i class="fas fa-right-left fa-sm"></i> Transferências
                         </a>
                     </li>
-                    @endif
-                    @if($modulos['usuarios'] ?? false)
+                    <?php endif; ?>
+                    <?php if ($modulos['usuarios'] ?? false): ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('usuarios*') ? 'active' : '' }}" href="/usuarios">
+                        <a class="rhc-nav-link <?= e(Request::is('usuarios*') ? 'active' : '') ?>" href="/usuarios">
                             <i class="fas fa-users-gear fa-sm"></i> Usuários
                         </a>
                     </li>
-                    @endif
+                    <?php endif; ?>
                     <li>
-                        <a class="rhc-nav-link {{ Request::is('ajuda*') ? 'active' : '' }}" href="/ajuda">
+                        <a class="rhc-nav-link <?= e(Request::is('ajuda*') ? 'active' : '') ?>" href="/ajuda">
                             <i class="fas fa-circle-question fa-sm"></i> Ajuda
                         </a>
                     </li>
@@ -628,11 +628,11 @@
 
                 <!-- Right side -->
                 <div class="rhc-nav-right">
-                    <span class="rhc-role-badge rhc-role-{{ $usuario->role }}">{{ $usuario->role }}</span>
-                    <span class="rhc-user-avatar">{{ strtoupper(substr($usuario->nome, 0, 1)) }}</span>
-                    <span class="rhc-user-name">{{ $usuario->nome }}</span>
+                    <span class="rhc-role-badge rhc-role-<?= e($usuario->role) ?>"><?= e($usuario->role) ?></span>
+                    <span class="rhc-user-avatar"><?= e(strtoupper(substr($usuario->nome, 0, 1))) ?></span>
+                    <span class="rhc-user-name"><?= e($usuario->nome) ?></span>
                     <form action="/logout" method="POST" style="margin:0;">
-                        @csrf
+                        <input type="hidden" name="_token" value="<?= csrf_token() ?>">
                         <button type="submit" class="rhc-logout-btn">
                             <i class="fas fa-right-from-bracket fa-sm"></i>
                             <span>Sair</span>
@@ -645,31 +645,23 @@
 
     <!-- Flash Messages -->
     <div class="rhc-main" style="padding-bottom: 0;">
-        @if(session('success'))
+        <?php if (session('success')): ?>
             <div class="rhc-flash rhc-flash-success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                <i class="fas fa-check-circle"></i> <?= e(session('success')) ?>
             </div>
-        @endif
-        @if(session('error'))
+        <?php endif; ?>
+        <?php if (session('error')): ?>
             <div class="rhc-flash rhc-flash-error">
-                <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+                <i class="fas fa-circle-exclamation"></i> <?= e(session('error')) ?>
             </div>
-        @endif
-        @if(session('warning'))
+        <?php endif; ?>
+        <?php if (session('warning')): ?>
             <div class="rhc-flash rhc-flash-warning">
-                <i class="fas fa-triangle-exclamation"></i> {{ session('warning') }}
+                <i class="fas fa-triangle-exclamation"></i> <?= e(session('warning')) ?>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <!-- Main Content -->
     <div class="rhc-main">
-        @yield('content')
-    </div>
-
-    <!-- Bootstrap 5.3 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    @yield('scripts')
-</body>
-</html>
+        

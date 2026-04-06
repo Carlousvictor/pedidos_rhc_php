@@ -1,0 +1,1 @@
+<?php /* Flash messages handled in layouts/header.php */ ?>

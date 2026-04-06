@@ -1,8 +1,7 @@
-@extends('layouts.app')
-
-@section('title', 'Pedidos - RHC Pedidos')
-
-@section('styles')
+<?php
+$__title = 'Pedidos - RHC Pedidos';
+ob_start();
+?>
 <style>
     /* Stat cards */
     .stat-cards {
@@ -187,10 +186,10 @@
         background: #eff6ff;
     }
 </style>
-@endsection
-
-@section('content')
-@php
+<?php $__styles = ob_get_clean();
+include __DIR__ . '/../layouts/header.php';
+?>
+<?php 
     $usuario = session('usuario');
     $modulos = $usuario->permissoes['modulos'] ?? [];
     $isAdminOrComprador = in_array($usuario->role, ['admin', 'comprador']);
@@ -205,136 +204,136 @@
 
     $allStatuses = array_keys($statusConfig);
     $totalCount = collect($statusCounts)->sum();
-@endphp
+ ?>
 
-{{-- Page Header --}}
+
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
     <div>
         <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">
             <i class="fas fa-clipboard-list" style="margin-right:0.5rem; color:var(--navy);"></i>Pedidos
         </h1>
         <p style="font-size:0.75rem; color:var(--slate-400); margin:0.25rem 0 0;">
-            @if($usuario->unidade_nome)
-                {{ $usuario->unidade_nome }}
-            @else
+            <?php if ($usuario->unidade_nome): ?>
+                <?= e($usuario->unidade_nome) ?>
+            <?php else: ?>
                 Todas as unidades
-            @endif
+            <?php endif; ?>
         </p>
     </div>
-    @if($modulos['criar_pedido'] ?? false)
+    <?php if ($modulos['criar_pedido'] ?? false): ?>
         <a href="/pedidos/novo" class="rhc-btn rhc-btn-primary">
             <i class="fas fa-plus-circle"></i> Novo Pedido
         </a>
-    @endif
+    <?php endif; ?>
 </div>
 
-{{-- Status Cards --}}
+
 <div class="stat-cards">
-    {{-- Total --}}
-    <a href="?{{ http_build_query(array_merge($filters, ['status' => ''])) }}"
-       class="stat-card {{ empty($filters['status']) ? 'active-stat' : '' }}">
+    
+    <a href="?<?= e(http_build_query(array_merge($filters, ['status' => '']))) ?>"
+       class="stat-card <?= e(empty($filters['status']) ? 'active-stat' : '') ?>">
         <div class="stat-icon" style="background:#f1f5f9; color:var(--slate-600);">
             <i class="fas fa-layer-group"></i>
         </div>
-        <div class="stat-number">{{ $totalCount }}</div>
+        <div class="stat-number"><?= e($totalCount) ?></div>
         <div class="stat-label">Todos</div>
         <div class="stat-bar">
             <div class="stat-bar-fill" style="width:100%; background:var(--navy);"></div>
         </div>
     </a>
-    @foreach($allStatuses as $st)
-        @php $cfg = $statusConfig[$st]; $count = $statusCounts[$st] ?? 0; $pct = $totalCount > 0 ? ($count / $totalCount * 100) : 0; @endphp
-        <a href="?{{ http_build_query(array_merge($filters, ['status' => $st])) }}"
-           class="stat-card {{ ($filters['status'] ?? '') === $st ? 'active-stat' : '' }}">
-            <div class="stat-icon" style="background:{{ $cfg['bg'] }}; color:{{ $cfg['text'] }};">
-                <i class="fas {{ $cfg['icon'] }}"></i>
+    <?php foreach ($allStatuses as $st): ?>
+        <?php  $cfg = $statusConfig[$st]; $count = $statusCounts[$st] ?? 0; $pct = $totalCount > 0 ? ($count / $totalCount * 100) : 0;  ?>
+        <a href="?<?= e(http_build_query(array_merge($filters, ['status' => $st]))) ?>"
+           class="stat-card <?= e(($filters['status'] ?? '') === $st ? 'active-stat' : '') ?>">
+            <div class="stat-icon" style="background:<?= e($cfg['bg']) ?>; color:<?= e($cfg['text']) ?>;">
+                <i class="fas <?= e($cfg['icon']) ?>"></i>
             </div>
-            <div class="stat-number">{{ $count }}</div>
-            <div class="stat-label">{{ $st }}</div>
+            <div class="stat-number"><?= e($count) ?></div>
+            <div class="stat-label"><?= e($st) ?></div>
             <div class="stat-bar">
-                <div class="stat-bar-fill" style="width:{{ $pct }}%; background:{{ $cfg['color'] }};"></div>
+                <div class="stat-bar-fill" style="width:<?= e($pct) ?>%; background:<?= e($cfg['color']) ?>;"></div>
             </div>
         </a>
-    @endforeach
+    <?php endforeach; ?>
 </div>
 
-{{-- Quick Access Modules --}}
+
 <div class="module-cards">
-    @if($modulos['criar_pedido'] ?? false)
+    <?php if ($modulos['criar_pedido'] ?? false): ?>
     <a href="/pedidos/novo" class="module-card">
         <div class="module-icon" style="background:#dbeafe; color:var(--navy);">
             <i class="fas fa-plus-circle"></i>
         </div>
         <span class="module-label">Novo Pedido</span>
     </a>
-    @endif
-    @if($modulos['itens'] ?? false)
+    <?php endif; ?>
+    <?php if ($modulos['itens'] ?? false): ?>
     <a href="/itens" class="module-card">
         <div class="module-icon" style="background:#ffedd5; color:#9a3412;">
             <i class="fas fa-boxes-stacked"></i>
         </div>
         <span class="module-label">Itens</span>
     </a>
-    @endif
-    @if($modulos['transferencias'] ?? false)
+    <?php endif; ?>
+    <?php if ($modulos['transferencias'] ?? false): ?>
     <a href="/transferencias" class="module-card">
         <div class="module-icon" style="background:#f3e8ff; color:#7c3aed;">
             <i class="fas fa-right-left"></i>
         </div>
         <span class="module-label">Transferências</span>
     </a>
-    @endif
-    @if($modulos['relatorios'] ?? false)
+    <?php endif; ?>
+    <?php if ($modulos['relatorios'] ?? false): ?>
     <a href="/relatorios" class="module-card">
         <div class="module-icon" style="background:#dcfce7; color:#166534;">
             <i class="fas fa-chart-bar"></i>
         </div>
         <span class="module-label">Relatórios</span>
     </a>
-    @endif
-    @if($modulos['usuarios'] ?? false)
+    <?php endif; ?>
+    <?php if ($modulos['usuarios'] ?? false): ?>
     <a href="/usuarios" class="module-card">
         <div class="module-icon" style="background:#ede9fe; color:#6d28d9;">
             <i class="fas fa-users-gear"></i>
         </div>
         <span class="module-label">Usuários</span>
     </a>
-    @endif
+    <?php endif; ?>
 </div>
 
-{{-- Search & Filters --}}
+
 <form method="GET" action="/" class="search-bar">
-    @if(!empty($filters['status']))
-        <input type="hidden" name="status" value="{{ $filters['status'] }}">
-    @endif
+    <?php if (!empty($filters['status'])): ?>
+        <input type="hidden" name="status" value="<?= e($filters['status']) ?>">
+    <?php endif; ?>
     <div class="search-input-wrap">
         <i class="fas fa-search"></i>
         <input type="text" name="search" class="rhc-input" placeholder="Buscar por nº do pedido..."
-               value="{{ $filters['search'] ?? '' }}">
+               value="<?= e($filters['search'] ?? '') ?>">
     </div>
-    @if($isAdminOrComprador)
+    <?php if ($isAdminOrComprador): ?>
     <div style="min-width:220px;">
         <select name="unidade_id" class="rhc-select">
             <option value="">Todas as unidades</option>
-            @foreach($unidades as $unidade)
-                <option value="{{ $unidade->id }}" {{ ($filters['unidade_id'] ?? '') == $unidade->id ? 'selected' : '' }}>
-                    {{ $unidade->nome }}
+            <?php foreach ($unidades as $unidade): ?>
+                <option value="<?= e($unidade->id) ?>" <?= e(($filters['unidade_id'] ?? '') == $unidade->id ? 'selected' : '') ?>>
+                    <?= e($unidade->nome) ?>
                 </option>
-            @endforeach
+            <?php endforeach; ?>
         </select>
     </div>
-    @endif
+    <?php endif; ?>
     <button type="submit" class="rhc-btn rhc-btn-outline rhc-btn-sm">
         <i class="fas fa-search"></i> Filtrar
     </button>
-    @if(!empty($filters['search']) || !empty($filters['unidade_id']))
-    <a href="/?{{ !empty($filters['status']) ? 'status=' . urlencode($filters['status']) : '' }}" class="rhc-btn rhc-btn-ghost rhc-btn-sm">
+    <?php if (!empty($filters['search']) || !empty($filters['unidade_id'])): ?>
+    <a href="/?<?= e(!empty($filters['status']) ? 'status=' . urlencode($filters['status']) : '') ?>" class="rhc-btn rhc-btn-ghost rhc-btn-sm">
         <i class="fas fa-times"></i> Limpar
     </a>
-    @endif
+    <?php endif; ?>
 </form>
 
-{{-- Orders Table --}}
+
 <div class="rhc-card" style="overflow:hidden;">
     <div class="rhc-table-wrap">
         <table class="rhc-table">
@@ -351,37 +350,37 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($pedidos as $pedido)
-                @php
+                <?php if (count($pedidos) > 0): ?><?php foreach ($pedidos as $pedido): ?>
+                <?php 
                     $stCfg = $statusConfig[$pedido->status] ?? ['bg' => '#f1f5f9', 'text' => '#64748b'];
-                @endphp
+                 ?>
                 <tr>
                     <td>
-                        <a href="/pedidos/{{ $pedido->id }}" class="order-link">
-                            {{ $pedido->numero_pedido ?? '(sem número)' }}
+                        <a href="/pedidos/<?= e($pedido->id) ?>" class="order-link">
+                            <?= e($pedido->numero_pedido ?? '(sem número)') ?>
                         </a>
                     </td>
                     <td>
-                        <span class="rhc-status" style="background:{{ $stCfg['bg'] }}; color:{{ $stCfg['text'] }};">
-                            {{ $pedido->status }}
+                        <span class="rhc-status" style="background:<?= e($stCfg['bg']) ?>; color:<?= e($stCfg['text']) ?>;">
+                            <?= e($pedido->status) ?>
                         </span>
                     </td>
-                    <td style="font-size:0.8rem;">{{ $pedido->unidade->nome ?? '-' }}</td>
-                    <td style="font-size:0.8rem;">{{ $pedido->usuario->nome ?? '-' }}</td>
-                    <td style="text-align:center; font-weight:600;">{{ $pedido->itens_count }}</td>
+                    <td style="font-size:0.8rem;"><?= e($pedido->unidade->nome ?? '-') ?></td>
+                    <td style="font-size:0.8rem;"><?= e($pedido->usuario->nome ?? '-') ?></td>
+                    <td style="text-align:center; font-weight:600;"><?= e($pedido->itens_count) ?></td>
                     <td style="text-align:right; font-weight:600; font-family:ui-monospace,monospace; font-size:0.8rem;">
-                        R$ {{ number_format($pedido->valor_total ?? 0, 2, ',', '.') }}
+                        R$ <?= e(number_format($pedido->valor_total ?? 0, 2, ',', '.')) ?>
                     </td>
                     <td style="font-size:0.75rem; color:var(--slate-400);">
-                        {{ $pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '-' }}
+                        <?= e($pedido->created_at ? $pedido->created_at->format('d/m/Y H:i') : '-') ?>
                     </td>
                     <td style="text-align:center;">
-                        <a href="/pedidos/{{ $pedido->id }}" class="view-btn">
+                        <a href="/pedidos/<?= e($pedido->id) ?>" class="view-btn">
                             <i class="fas fa-eye"></i> Ver
                         </a>
                     </td>
                 </tr>
-                @empty
+                <?php endforeach; ?><?php else: ?>
                 <tr>
                     <td colspan="8">
                         <div class="empty-state">
@@ -390,34 +389,35 @@
                         </div>
                     </td>
                 </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
-{{-- Pagination --}}
-@if($pedidos->hasPages())
+
+<?php if ($pedidos->hasPages()): ?>
 <div class="rhc-pagination">
-    @if($pedidos->onFirstPage())
+    <?php if ($pedidos->onFirstPage()): ?>
         <span class="disabled-page"><i class="fas fa-chevron-left fa-xs"></i></span>
-    @else
-        <a href="{{ $pedidos->previousPageUrl() }}"><i class="fas fa-chevron-left fa-xs"></i></a>
-    @endif
+    <?php else: ?>
+        <a href="<?= e($pedidos->previousPageUrl()) ?>"><i class="fas fa-chevron-left fa-xs"></i></a>
+    <?php endif; ?>
 
-    @foreach($pedidos->getUrlRange(1, $pedidos->lastPage()) as $page => $url)
-        @if($page == $pedidos->currentPage())
-            <span class="active-page">{{ $page }}</span>
-        @else
-            <a href="{{ $url }}">{{ $page }}</a>
-        @endif
-    @endforeach
+    <?php foreach ($pedidos->getUrlRange(1, $pedidos->lastPage()) as $page => $url): ?>
+        <?php if ($page == $pedidos->currentPage()): ?>
+            <span class="active-page"><?= e($page) ?></span>
+        <?php else: ?>
+            <a href="<?= e($url) ?>"><?= e($page) ?></a>
+        <?php endif; ?>
+    <?php endforeach; ?>
 
-    @if($pedidos->hasMorePages())
-        <a href="{{ $pedidos->nextPageUrl() }}"><i class="fas fa-chevron-right fa-xs"></i></a>
-    @else
+    <?php if ($pedidos->hasMorePages()): ?>
+        <a href="<?= e($pedidos->nextPageUrl()) ?>"><i class="fas fa-chevron-right fa-xs"></i></a>
+    <?php else: ?>
         <span class="disabled-page"><i class="fas fa-chevron-right fa-xs"></i></span>
-    @endif
+    <?php endif; ?>
 </div>
-@endif
-@endsection
+<?php endif; ?>
+
+<?php include __DIR__ . '/../layouts/footer.php'; ?>

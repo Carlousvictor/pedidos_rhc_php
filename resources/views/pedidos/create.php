@@ -1,8 +1,7 @@
-@extends('layouts.app')
-
-@section('title', 'Novo Pedido')
-
-@section('styles')
+<?php
+$__title = 'Novo Pedido';
+ob_start();
+?>
 <style>
     .search-results {
         position: absolute;
@@ -214,186 +213,9 @@
     }
     .selected-items-table .item-icon-box i { color: var(--slate-500); font-size: 0.7rem; }
 </style>
-@endsection
-
-@section('content')
-@php
-    $usuario = session('usuario');
-@endphp
-
-{{-- Header --}}
-<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
-    <div>
-        <div style="display:flex; align-items:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin-bottom:0.5rem;">
-            <a href="/" style="color:var(--slate-400); text-decoration:none;">Dashboard</a>
-            <i class="fas fa-chevron-right" style="font-size:0.6rem;"></i>
-            <span style="color:var(--slate-700); font-weight:500;">Novo Pedido</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.75rem;">
-            <div style="width:2.5rem; height:2.5rem; border-radius:0.75rem; background:var(--navy); display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.1); flex-shrink:0;">
-                <i class="fas fa-plus" style="color:white; font-size:1rem;"></i>
-            </div>
-            <div>
-                <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">Novo Pedido</h1>
-                <p style="font-size:0.75rem; color:var(--slate-400); margin:0.125rem 0 0;">Crie uma nova solicitação de materiais</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-@if($errors->any())
-<div class="rhc-flash rhc-flash-error" style="margin-bottom:1rem;">
-    <i class="fas fa-circle-exclamation"></i>
-    <div>
-        @foreach($errors->all() as $error)
-            {{ $error }}<br>
-        @endforeach
-    </div>
-</div>
-@endif
-
-<form method="POST" action="/pedidos" id="pedidoForm">
-    @csrf
-
-    {{-- Unidade --}}
-    <div class="rhc-card" style="overflow:hidden; margin-bottom:1rem;">
-        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100);">
-            <h5 style="font-size:0.875rem; font-weight:700; color:var(--slate-800); margin:0;">
-                <i class="fas fa-building" style="color:var(--navy); margin-right:0.5rem;"></i>Unidade
-            </h5>
-        </div>
-        <div style="padding:1.25rem;">
-            <div style="max-width:24rem;">
-                <label class="rhc-label">Unidade <span style="color:var(--red-500);">*</span></label>
-                <select name="unidade_id" id="unidade_id" class="rhc-select" style="width:100%;" required>
-                    <option value="">Selecione a unidade...</option>
-                    @foreach($unidades as $unidade)
-                        <option value="{{ $unidade->id }}"
-                            {{ (old('unidade_id') ?? $usuario->unidade_id) == $unidade->id ? 'selected' : '' }}>
-                            {{ $unidade->nome }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-
-    {{-- Itens --}}
-    <div class="rhc-card" style="overflow:hidden; margin-bottom:1rem;">
-        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100); display:flex; justify-content:space-between; align-items:center;">
-            <h5 style="font-size:0.875rem; font-weight:700; color:var(--slate-800); margin:0;">
-                <i class="fas fa-boxes-stacked" style="color:var(--navy); margin-right:0.5rem;"></i>Itens do Pedido
-            </h5>
-            <span id="itemCount" style="font-size:0.75rem; color:var(--slate-400); display:none;">
-                0 itens adicionados
-            </span>
-        </div>
-        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100); display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
-            <div style="position:relative; flex:1; min-width:16rem;">
-                <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--slate-400); font-size:0.8rem;"></i>
-                <input type="text" id="itemSearch" class="rhc-input" placeholder="Buscar item por nome, código ou referência..."
-                       autocomplete="off" style="padding-left:2.5rem; width:100%;">
-                <div id="searchResults" class="search-results"></div>
-            </div>
-            <label class="rhc-btn rhc-btn-ghost rhc-btn-sm" style="cursor:pointer; margin:0;">
-                <i class="fas fa-file-excel" style="margin-right:0.25rem; color:#059669;"></i> Importar Excel
-                <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none;">
-            </label>
-            <button type="button" class="rhc-btn rhc-btn-outline rhc-btn-sm" id="btnDownloadCsv" disabled onclick="downloadCsv()">
-                <i class="fas fa-download" style="margin-right:0.25rem;"></i> Baixar CSV
-            </button>
-        </div>
-        {{-- Import result banner --}}
-        <div id="importResult" style="display:none; padding:0.75rem 1.25rem; background:#ecfdf5; border-bottom:1px solid #a7f3d0; font-size:0.8rem; color:#065f46;">
-            <i class="fas fa-circle-check" style="margin-right:0.375rem;"></i>
-            <span id="importResultText"></span>
-        </div>
-
-        {{-- Selected Items Table --}}
-        <div class="rhc-table-wrap selected-items-table">
-            <table class="rhc-table" id="itensTable">
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Descrição</th>
-                        <th>Tipo</th>
-                        <th style="text-align:center; width:120px;">Quantidade</th>
-                        <th style="text-align:center; width:80px;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="itensBody">
-                    <tr id="emptyRow">
-                        <td colspan="5">
-                            <div class="empty-state" style="padding:2rem 1rem;">
-                                <i class="fas fa-boxes-stacked" style="font-size:2rem;"></i>
-                                Nenhum item adicionado. Use a busca acima para adicionar itens.
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- Actions --}}
-    <div style="display:flex; gap:0.5rem;">
-        <button type="submit" class="rhc-btn rhc-btn-primary" id="btnSubmit" disabled style="padding:0.625rem 1.5rem;">
-            <i class="fas fa-check" style="margin-right:0.375rem;"></i> Criar Pedido
-        </button>
-        <a href="/" class="rhc-btn rhc-btn-ghost" style="padding:0.625rem 1.5rem;">Cancelar</a>
-    </div>
-</form>
-
-{{-- Item Add Modal (hidden by default) --}}
-<div id="itemAddModal" class="item-modal-overlay" style="display:none;">
-    <div class="item-modal-backdrop" onclick="closeItemModal()"></div>
-    <div class="item-modal-card">
-        <div class="item-modal-header">
-            <div class="im-info">
-                <div class="im-icon">
-                    <i class="fas fa-box" style="font-size:1rem;"></i>
-                </div>
-                <div style="min-width:0;">
-                    <div class="im-name" id="modalItemName"></div>
-                    <div id="modalItemTipo"></div>
-                </div>
-            </div>
-            <button class="im-close" onclick="closeItemModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="im-details">
-            <div class="im-detail-box">
-                <div class="im-detail-label">Código</div>
-                <div class="im-detail-value" id="modalItemCode"></div>
-            </div>
-            <div class="im-detail-box" id="modalRefBox">
-                <div class="im-detail-label">Referência</div>
-                <div class="im-detail-value" id="modalItemRef"></div>
-            </div>
-        </div>
-
-        <div class="im-qty-section">
-            <div class="im-qty-label">Quantidade</div>
-            <div class="im-qty-control">
-                <button type="button" class="im-qty-btn" onclick="changeQty(-1)">−</button>
-                <input type="number" id="modalQtyInput" class="im-qty-input" min="1" value="1">
-                <button type="button" class="im-qty-btn" onclick="changeQty(1)">+</button>
-            </div>
-        </div>
-
-        <div class="im-actions">
-            <button type="button" class="rhc-btn rhc-btn-ghost" onclick="closeItemModal()">Cancelar</button>
-            <button type="button" class="rhc-btn rhc-btn-primary" id="modalConfirmBtn" onclick="confirmAddItem()">
-                <i class="fas fa-plus" style="margin-right:0.25rem;"></i> Adicionar ao Pedido
-            </button>
-        </div>
-    </div>
-</div>
-@endsection
-
-@section('scripts')
+<?php $__styles = ob_get_clean();
+ob_start();
+?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -782,4 +604,182 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-@endsection
+<?php $__scripts = ob_get_clean();
+include __DIR__ . '/../layouts/header.php';
+?>
+<?php 
+    $usuario = session('usuario');
+ ?>
+
+
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
+    <div>
+        <div style="display:flex; align-items:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin-bottom:0.5rem;">
+            <a href="/" style="color:var(--slate-400); text-decoration:none;">Dashboard</a>
+            <i class="fas fa-chevron-right" style="font-size:0.6rem;"></i>
+            <span style="color:var(--slate-700); font-weight:500;">Novo Pedido</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div style="width:2.5rem; height:2.5rem; border-radius:0.75rem; background:var(--navy); display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.1); flex-shrink:0;">
+                <i class="fas fa-plus" style="color:white; font-size:1rem;"></i>
+            </div>
+            <div>
+                <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">Novo Pedido</h1>
+                <p style="font-size:0.75rem; color:var(--slate-400); margin:0.125rem 0 0;">Crie uma nova solicitação de materiais</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if ($errors->any()): ?>
+<div class="rhc-flash rhc-flash-error" style="margin-bottom:1rem;">
+    <i class="fas fa-circle-exclamation"></i>
+    <div>
+        <?php foreach ($errors->all() as $error): ?>
+            <?= e($error) ?><br>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<form method="POST" action="/pedidos" id="pedidoForm">
+    <input type="hidden" name="_token" value="<?= csrf_token() ?>">
+
+    
+    <div class="rhc-card" style="overflow:hidden; margin-bottom:1rem;">
+        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100);">
+            <h5 style="font-size:0.875rem; font-weight:700; color:var(--slate-800); margin:0;">
+                <i class="fas fa-building" style="color:var(--navy); margin-right:0.5rem;"></i>Unidade
+            </h5>
+        </div>
+        <div style="padding:1.25rem;">
+            <div style="max-width:24rem;">
+                <label class="rhc-label">Unidade <span style="color:var(--red-500);">*</span></label>
+                <select name="unidade_id" id="unidade_id" class="rhc-select" style="width:100%;" required>
+                    <option value="">Selecione a unidade...</option>
+                    <?php foreach ($unidades as $unidade): ?>
+                        <option value="<?= e($unidade->id) ?>"
+                            <?= e((old('unidade_id') ?? $usuario->unidade_id) == $unidade->id ? 'selected' : '') ?>>
+                            <?= e($unidade->nome) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="rhc-card" style="overflow:hidden; margin-bottom:1rem;">
+        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100); display:flex; justify-content:space-between; align-items:center;">
+            <h5 style="font-size:0.875rem; font-weight:700; color:var(--slate-800); margin:0;">
+                <i class="fas fa-boxes-stacked" style="color:var(--navy); margin-right:0.5rem;"></i>Itens do Pedido
+            </h5>
+            <span id="itemCount" style="font-size:0.75rem; color:var(--slate-400); display:none;">
+                0 itens adicionados
+            </span>
+        </div>
+        <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100); display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+            <div style="position:relative; flex:1; min-width:16rem;">
+                <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--slate-400); font-size:0.8rem;"></i>
+                <input type="text" id="itemSearch" class="rhc-input" placeholder="Buscar item por nome, código ou referência..."
+                       autocomplete="off" style="padding-left:2.5rem; width:100%;">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            <label class="rhc-btn rhc-btn-ghost rhc-btn-sm" style="cursor:pointer; margin:0;">
+                <i class="fas fa-file-excel" style="margin-right:0.25rem; color:#059669;"></i> Importar Excel
+                <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none;">
+            </label>
+            <button type="button" class="rhc-btn rhc-btn-outline rhc-btn-sm" id="btnDownloadCsv" disabled onclick="downloadCsv()">
+                <i class="fas fa-download" style="margin-right:0.25rem;"></i> Baixar CSV
+            </button>
+        </div>
+        
+        <div id="importResult" style="display:none; padding:0.75rem 1.25rem; background:#ecfdf5; border-bottom:1px solid #a7f3d0; font-size:0.8rem; color:#065f46;">
+            <i class="fas fa-circle-check" style="margin-right:0.375rem;"></i>
+            <span id="importResultText"></span>
+        </div>
+
+        
+        <div class="rhc-table-wrap selected-items-table">
+            <table class="rhc-table" id="itensTable">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descrição</th>
+                        <th>Tipo</th>
+                        <th style="text-align:center; width:120px;">Quantidade</th>
+                        <th style="text-align:center; width:80px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="itensBody">
+                    <tr id="emptyRow">
+                        <td colspan="5">
+                            <div class="empty-state" style="padding:2rem 1rem;">
+                                <i class="fas fa-boxes-stacked" style="font-size:2rem;"></i>
+                                Nenhum item adicionado. Use a busca acima para adicionar itens.
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    
+    <div style="display:flex; gap:0.5rem;">
+        <button type="submit" class="rhc-btn rhc-btn-primary" id="btnSubmit" disabled style="padding:0.625rem 1.5rem;">
+            <i class="fas fa-check" style="margin-right:0.375rem;"></i> Criar Pedido
+        </button>
+        <a href="/" class="rhc-btn rhc-btn-ghost" style="padding:0.625rem 1.5rem;">Cancelar</a>
+    </div>
+</form>
+
+
+<div id="itemAddModal" class="item-modal-overlay" style="display:none;">
+    <div class="item-modal-backdrop" onclick="closeItemModal()"></div>
+    <div class="item-modal-card">
+        <div class="item-modal-header">
+            <div class="im-info">
+                <div class="im-icon">
+                    <i class="fas fa-box" style="font-size:1rem;"></i>
+                </div>
+                <div style="min-width:0;">
+                    <div class="im-name" id="modalItemName"></div>
+                    <div id="modalItemTipo"></div>
+                </div>
+            </div>
+            <button class="im-close" onclick="closeItemModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="im-details">
+            <div class="im-detail-box">
+                <div class="im-detail-label">Código</div>
+                <div class="im-detail-value" id="modalItemCode"></div>
+            </div>
+            <div class="im-detail-box" id="modalRefBox">
+                <div class="im-detail-label">Referência</div>
+                <div class="im-detail-value" id="modalItemRef"></div>
+            </div>
+        </div>
+
+        <div class="im-qty-section">
+            <div class="im-qty-label">Quantidade</div>
+            <div class="im-qty-control">
+                <button type="button" class="im-qty-btn" onclick="changeQty(-1)">−</button>
+                <input type="number" id="modalQtyInput" class="im-qty-input" min="1" value="1">
+                <button type="button" class="im-qty-btn" onclick="changeQty(1)">+</button>
+            </div>
+        </div>
+
+        <div class="im-actions">
+            <button type="button" class="rhc-btn rhc-btn-ghost" onclick="closeItemModal()">Cancelar</button>
+            <button type="button" class="rhc-btn rhc-btn-primary" id="modalConfirmBtn" onclick="confirmAddItem()">
+                <i class="fas fa-plus" style="margin-right:0.25rem;"></i> Adicionar ao Pedido
+            </button>
+        </div>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../layouts/footer.php'; ?>
