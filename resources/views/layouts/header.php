@@ -58,7 +58,7 @@
 
         /* ===== NAVBAR ===== */
         .rhc-navbar {
-            height: 64px;
+            min-height: 64px;
             background-color: var(--navy);
             position: sticky;
             top: 0;
@@ -72,7 +72,7 @@
             display: flex;
             align-items: center;
             width: 100%;
-            gap: 1.5rem;
+            gap: 0.75rem;
         }
         .rhc-logo-area {
             display: flex;
@@ -105,16 +105,18 @@
         .rhc-nav-links {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.125rem;
             list-style: none;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            margin: 0;
+            padding: 0;
         }
         .rhc-nav-link {
             color: rgba(255,255,255,0.8);
             text-decoration: none;
-            padding: 0.375rem 0.75rem;
+            padding: 0.3rem 0.5rem;
             border-radius: 0.375rem;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 500;
             transition: background-color 0.15s, color 0.15s;
             white-space: nowrap;
@@ -196,7 +198,7 @@
             cursor: pointer;
             padding: 0.25rem;
         }
-        .rhc-nav-collapse { display: contents; }
+        .rhc-nav-collapse { display: contents; flex: 1; min-width: 0; }
 
         @media (max-width: 1024px) {
             .rhc-mobile-toggle { display: block; }
