@@ -1,7 +1,8 @@
-<?php 
-$__title = 'Catálogo de Itens';
-ob_start();
- ?>
+@extends('layouts.app')
+
+@section('title', 'Catálogo de Itens')
+
+@section('styles')
 <style>
     .tipo-badge {
         display: inline-flex;
@@ -73,10 +74,10 @@ ob_start();
         color: var(--slate-500);
     }
 </style>
-<?php $__styles = ob_get_clean();
-include __DIR__ . '/../layouts/header.php';
- ?>
-<?php 
+@endsection
+
+@section('content')
+@php
     $usuario = session('usuario');
     $isAdminOrComprador = in_array($usuario->role, ['admin', 'comprador']);
 
@@ -89,9 +90,9 @@ include __DIR__ . '/../layouts/header.php';
         'MED. ONCO CONTR. LIBBS.' => 'tipo-medoncolibbs',
         'MEDICAMENTOS' => 'tipo-medicamentos',
     ];
- ?>
+@endphp
 
-
+{{-- Header --}}
 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
     <div>
         <div style="display:flex; align-items:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin-bottom:0.5rem;">
@@ -106,50 +107,50 @@ include __DIR__ . '/../layouts/header.php';
             <div>
                 <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">Catálogo de Itens</h1>
                 <p style="font-size:0.75rem; color:var(--slate-400); margin:0.125rem 0 0;">
-                    <?= e(number_format($itens->total(), 0, ',', '.')) ?> itens cadastrados
+                    {{ number_format($itens->total(), 0, ',', '.') }} itens cadastrados
                 </p>
             </div>
         </div>
     </div>
     <div style="display:flex; align-items:center; gap:0.75rem; flex-shrink:0;">
-        <?php if (request('search') || request('tipo')): ?>
+        @if(request('search') || request('tipo'))
             <span class="filter-count">
-                <?= e($itens->total()) ?> encontrado<?= e($itens->total() !== 1 ? 's' : '') ?>
+                {{ $itens->total() }} encontrado{{ $itens->total() !== 1 ? 's' : '' }}
             </span>
-        <?php endif; ?>
-        <?php if ($isAdminOrComprador): ?>
+        @endif
+        @if($isAdminOrComprador)
             <button class="rhc-btn rhc-btn-primary" data-bs-toggle="modal" data-bs-target="#novoItemModal">
                 <i class="fas fa-plus" style="margin-right:0.375rem;"></i> Novo Item
             </button>
-        <?php endif; ?>
+        @endif
     </div>
 </div>
 
-
+{{-- Main Card --}}
 <div class="rhc-card" style="overflow:hidden;">
-    
+    {{-- Filters inside card --}}
     <div style="padding:1.5rem; border-bottom:1px solid var(--slate-100); display:flex; gap:1rem; flex-wrap:wrap;">
-        <form action="<?= e(route('itens.index')) ?>" method="GET" style="display:flex; gap:1rem; flex-wrap:wrap; width:100%; align-items:center;">
+        <form action="{{ route('itens.index') }}" method="GET" style="display:flex; gap:1rem; flex-wrap:wrap; width:100%; align-items:center;">
             <div style="position:relative; width:100%; max-width:24rem;">
                 <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--slate-400); font-size:0.8rem;"></i>
                 <input type="text" name="search" class="rhc-input" placeholder="Buscar por descrição, código ou referência..."
-                       value="<?= e(request('search')) ?>" style="padding-left:2.5rem; width:100%;">
+                       value="{{ request('search') }}" style="padding-left:2.5rem; width:100%;">
             </div>
             <select name="tipo" class="rhc-select" style="min-width:180px;" onchange="this.form.submit()">
                 <option value="">Todos os tipos</option>
-                <?php foreach ($tipos as $tipo): ?>
-                    <option value="<?= e($tipo) ?>" <?= e(request('tipo') == $tipo ? 'selected' : '') ?>><?= e($tipo) ?></option>
-                <?php endforeach; ?>
+                @foreach($tipos as $tipo)
+                    <option value="{{ $tipo }}" {{ request('tipo') == $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+                @endforeach
             </select>
-            <?php if (request('search') || request('tipo')): ?>
-                <a href="<?= e(route('itens.index')) ?>" class="rhc-btn rhc-btn-ghost rhc-btn-sm">
+            @if(request('search') || request('tipo'))
+                <a href="{{ route('itens.index') }}" class="rhc-btn rhc-btn-ghost rhc-btn-sm">
                     <i class="fas fa-times"></i> Limpar
                 </a>
-            <?php endif; ?>
+            @endif
         </form>
     </div>
 
-    
+    {{-- Table --}}
     <div class="rhc-table-wrap">
         <table class="rhc-table">
             <thead>
@@ -161,27 +162,27 @@ include __DIR__ . '/../layouts/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if (count($itens) > 0): foreach ($itens as $item): ?>
+                @forelse($itens as $item)
                     <tr>
-                        <td style="font-family:ui-monospace,monospace; font-size:0.875rem; color:var(--slate-700);"><?= e($item->codigo) ?></td>
+                        <td style="font-family:ui-monospace,monospace; font-size:0.875rem; color:var(--slate-700);">{{ $item->codigo }}</td>
                         <td>
                             <div class="item-icon-cell">
                                 <div class="item-icon-box">
                                     <i class="fas fa-box"></i>
                                 </div>
-                                <span style="font-size:0.875rem; color:var(--slate-900);"><?= e($item->nome) ?></span>
+                                <span style="font-size:0.875rem; color:var(--slate-900);">{{ $item->nome }}</span>
                             </div>
                         </td>
-                        <td style="font-family:ui-monospace,monospace; font-size:0.875rem; color:var(--slate-500);"><?= e($item->referencia ?? '') ?></td>
+                        <td style="font-family:ui-monospace,monospace; font-size:0.875rem; color:var(--slate-500);">{{ $item->referencia ?? '' }}</td>
                         <td>
-                            <?php if ($item->tipo): ?>
-                                <span class="tipo-badge <?= e($tipoClasses[$item->tipo] ?? 'tipo-default') ?>"><?= e($item->tipo) ?></span>
-                            <?php else: ?>
+                            @if($item->tipo)
+                                <span class="tipo-badge {{ $tipoClasses[$item->tipo] ?? 'tipo-default' }}">{{ $item->tipo }}</span>
+                            @else
                                 <span style="color:var(--slate-400); font-size:0.875rem;">—</span>
-                            <?php endif; ?>
+                            @endif
                         </td>
                     </tr>
-                <?php endforeach; else: ?>
+                @empty
                     <tr>
                         <td colspan="4">
                             <div class="empty-state">
@@ -190,40 +191,40 @@ include __DIR__ . '/../layouts/header.php';
                             </div>
                         </td>
                     </tr>
-                <?php endif; ?>
+                @endforelse
             </tbody>
         </table>
     </div>
 
-    
-    <?php if ($itens->hasPages()): ?>
+    {{-- Pagination --}}
+    @if($itens->hasPages())
         <div class="pagination-modern">
             <span>
-                Exibindo <?= e($itens->firstItem()) ?>–<?= e($itens->lastItem()) ?> de <?= e(number_format($itens->total(), 0, ',', '.')) ?>
+                Exibindo {{ $itens->firstItem() }}–{{ $itens->lastItem() }} de {{ number_format($itens->total(), 0, ',', '.') }}
             </span>
             <div class="page-btns">
-                <?php if ($itens->onFirstPage()): ?>
+                @if($itens->onFirstPage())
                     <span class="page-btn disabled">Anterior</span>
-                <?php else: ?>
-                    <a href="<?= e($itens->previousPageUrl()) ?>" class="page-btn">Anterior</a>
-                <?php endif; ?>
-                <span style="padding:0 0.5rem;"><?= e($itens->currentPage()) ?> / <?= e($itens->lastPage()) ?></span>
-                <?php if ($itens->hasMorePages()): ?>
-                    <a href="<?= e($itens->nextPageUrl()) ?>" class="page-btn">Próxima</a>
-                <?php else: ?>
+                @else
+                    <a href="{{ $itens->previousPageUrl() }}" class="page-btn">Anterior</a>
+                @endif
+                <span style="padding:0 0.5rem;">{{ $itens->currentPage() }} / {{ $itens->lastPage() }}</span>
+                @if($itens->hasMorePages())
+                    <a href="{{ $itens->nextPageUrl() }}" class="page-btn">Próxima</a>
+                @else
                     <span class="page-btn disabled">Próxima</span>
-                <?php endif; ?>
+                @endif
             </div>
         </div>
-    <?php endif; ?>
+    @endif
 </div>
 
-
-<?php if ($isAdminOrComprador): ?>
+{{-- Modal Novo Item --}}
+@if($isAdminOrComprador)
 <div class="modal fade" id="novoItemModal" tabindex="-1">
     <div class="modal-dialog">
-        <form action="<?= e(route('itens.store')) ?>" method="POST">
-            <input type="hidden" name="_token" value="<?= csrf_token() ?>">
+        <form action="{{ route('itens.store') }}" method="POST">
+            @csrf
             <div class="modal-content" style="border:0; border-radius:1rem; overflow:hidden;">
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid var(--slate-100);">
                     <h2 style="font-size:1.125rem; font-weight:700; color:var(--slate-800); margin:0;">Novo Item</h2>
@@ -248,9 +249,9 @@ include __DIR__ . '/../layouts/header.php';
                         <label class="rhc-label">Tipo</label>
                         <select name="tipo" class="rhc-select" style="width:100%;">
                             <option value="">Selecione um tipo...</option>
-                            <?php foreach ($tipos as $tipo): ?>
-                                <option value="<?= e($tipo) ?>"><?= e($tipo) ?></option>
-                            <?php endforeach; ?>
+                            @foreach($tipos as $tipo)
+                                <option value="{{ $tipo }}">{{ $tipo }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -264,6 +265,5 @@ include __DIR__ . '/../layouts/header.php';
         </form>
     </div>
 </div>
-<?php endif; ?>
-
-<?php include __DIR__ . '/../layouts/footer.php'; ?>
+@endif
+@endsection

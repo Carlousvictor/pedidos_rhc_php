@@ -1,1 +1,0 @@
-<?php /* Flash messages in header */ ?>

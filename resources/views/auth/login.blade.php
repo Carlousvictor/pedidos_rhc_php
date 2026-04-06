@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - RHC Pedidos</title>
     <link rel="icon" type="image/png" href="/logo.png">
 
@@ -200,24 +200,24 @@
         <!-- Card -->
         <div class="login-card">
             <!-- Error messages -->
-            <?php if ($errors->any()): ?>
+            @if($errors->any())
                 <div class="login-error">
                     <i class="fas fa-circle-exclamation" style="margin-right:0.25rem;"></i>
-                    <?php foreach ($errors->all() as $erro): ?>
-                        <?= e($erro) ?>
-                    <?php endforeach; ?>
+                    @foreach($errors->all() as $erro)
+                        {{ $erro }}
+                    @endforeach
                 </div>
-            <?php endif; ?>
+            @endif
 
-            <?php if (session('error')): ?>
+            @if(session('error'))
                 <div class="login-error">
                     <i class="fas fa-circle-exclamation" style="margin-right:0.25rem;"></i>
-                    <?= e(session('error')) ?>
+                    {{ session('error') }}
                 </div>
-            <?php endif; ?>
+            @endif
 
             <form action="/login" method="POST" autocomplete="off">
-                <input type="hidden" name="_token" value="<?= csrf_token() ?>">
+                @csrf
 
                 <div class="form-group">
                     <label class="form-label" for="username">Usuário</label>
@@ -228,7 +228,7 @@
                                id="username"
                                name="username"
                                placeholder="Digite seu usuário"
-                               value="<?= e(old('username')) ?>"
+                               value="{{ old('username') }}"
                                required
                                autofocus>
                     </div>

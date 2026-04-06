@@ -1,7 +1,8 @@
-<?php 
-$__title = 'Histórico de Pedidos';
-ob_start();
- ?>
+@extends('layouts.app')
+
+@section('title', 'Histórico de Pedidos')
+
+@section('styles')
 <style>
     .status-tabs {
         display: flex;
@@ -83,10 +84,10 @@ ob_start();
     }
     .delete-action:hover { color: #dc2626; background: #fef2f2; }
 </style>
-<?php $__styles = ob_get_clean();
-include __DIR__ . '/../layouts/header.php';
- ?>
-<?php 
+@endsection
+
+@section('content')
+@php
     $usuario = session('usuario');
     $isAdminOrComprador = in_array($usuario->role, ['admin', 'comprador']);
     $currentStatus = request('status', '');
@@ -114,9 +115,9 @@ include __DIR__ . '/../layouts/header.php';
         'Realizado' => 'Realizado',
         'Recebido' => 'Recebido',
     ];
- ?>
+@endphp
 
-
+{{-- Header --}}
 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
     <div>
         <div style="display:flex; align-items:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin-bottom:0.5rem;">
@@ -131,56 +132,56 @@ include __DIR__ . '/../layouts/header.php';
             <div>
                 <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">Histórico de Pedidos</h1>
                 <p style="font-size:0.75rem; color:var(--slate-400); margin:0.125rem 0 0;">
-                    <?php if ($isAdminOrComprador): ?>
+                    @if($isAdminOrComprador)
                         Todos os pedidos do sistema — visualize e acompanhe o recebimento.
-                    <?php else: ?>
+                    @else
                         Acompanhe suas solicitações e confirme o recebimento.
-                    <?php endif; ?>
+                    @endif
                 </p>
             </div>
         </div>
     </div>
-    <?php if ($isAdminOrComprador && ($statusCounts['Pendente'] ?? 0) > 0): ?>
+    @if($isAdminOrComprador && ($statusCounts['Pendente'] ?? 0) > 0)
         <div style="display:flex; align-items:center; gap:0.5rem; background:#fff7ed; border:1px solid #fed7aa; color:#c2410c; padding:0.625rem 1rem; border-radius:0.5rem; font-size:0.875rem; font-weight:500; flex-shrink:0;">
             <i class="fas fa-clock"></i>
-            <?= e($statusCounts['Pendente']) ?> pedido<?= e(($statusCounts['Pendente'] ?? 0) > 1 ? 's' : '') ?> aguardando
+            {{ $statusCounts['Pendente'] }} pedido{{ ($statusCounts['Pendente'] ?? 0) > 1 ? 's' : '' }} aguardando
         </div>
-    <?php endif; ?>
+    @endif
 </div>
 
-
+{{-- Main Card --}}
 <div class="rhc-card" style="overflow:hidden;">
-    
+    {{-- Search + Tabs --}}
     <div style="padding:1.25rem; border-bottom:1px solid var(--slate-100);">
         <div style="position:relative; width:100%; max-width:24rem; margin-bottom:1rem;">
             <i class="fas fa-search" style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--slate-400); font-size:0.75rem;"></i>
-            <form method="GET" action="<?= e(route('historico')) ?>" id="historicoForm">
-                <input type="hidden" name="status" value="<?= e($currentStatus) ?>">
-                <?php if (request('unidade_id')): ?>
-                    <input type="hidden" name="unidade_id" value="<?= e(request('unidade_id')) ?>">
-                <?php endif; ?>
+            <form method="GET" action="{{ route('historico') }}" id="historicoForm">
+                <input type="hidden" name="status" value="{{ $currentStatus }}">
+                @if(request('unidade_id'))
+                    <input type="hidden" name="unidade_id" value="{{ request('unidade_id') }}">
+                @endif
                 <input type="text" name="search" class="rhc-input" placeholder="Buscar por Nº do Pedido ou Unidade..."
-                       value="<?= e(request('search')) ?>" style="padding-left:2.25rem; width:100%;">
+                       value="{{ request('search') }}" style="padding-left:2.25rem; width:100%;">
             </form>
         </div>
 
         <div class="status-tabs">
-            <?php foreach ($statusTabs as $value => $label): ?>
-                <?php 
+            @foreach($statusTabs as $value => $label)
+                @php
                     $count = $value === '' ? $pedidos->total() : ($statusCounts[$value] ?? 0);
                     $isActive = $currentStatus === $value;
                     $isPendenteAlert = $value === 'Pendente' && $count > 0 && $isAdminOrComprador;
-                 ?>
-                <a href="<?= e(route('historico', array_merge(request()->except('status', 'page'), ['status' => $value]))) ?>"
-                   class="status-tab <?= e($isActive ? 'active' : '') ?>">
-                    <?= e($label) ?>
-                    <span class="tab-count <?= e($isPendenteAlert && !$isActive ? 'pendente-alert' : '') ?>"><?= e($count) ?></span>
+                @endphp
+                <a href="{{ route('historico', array_merge(request()->except('status', 'page'), ['status' => $value])) }}"
+                   class="status-tab {{ $isActive ? 'active' : '' }}">
+                    {{ $label }}
+                    <span class="tab-count {{ $isPendenteAlert && !$isActive ? 'pendente-alert' : '' }}">{{ $count }}</span>
                 </a>
-            <?php endforeach; ?>
+            @endforeach
         </div>
     </div>
 
-    
+    {{-- Table --}}
     <div class="rhc-table-wrap">
         <table class="rhc-table">
             <thead>
@@ -193,43 +194,43 @@ include __DIR__ . '/../layouts/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if (count($pedidos) > 0): foreach ($pedidos as $pedido): ?>
-                    <tr class="<?= e($accentClasses[$pedido->status] ?? '') ?>">
+                @forelse($pedidos as $pedido)
+                    <tr class="{{ $accentClasses[$pedido->status] ?? '' }}">
                         <td style="font-weight:500; font-size:0.875rem; color:var(--slate-900);">
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <i class="fas fa-file-alt" style="color:var(--slate-400); font-size:0.8rem;"></i>
-                                #<?= e($pedido->numero_pedido ?? '(sem número)') ?>
+                                #{{ $pedido->numero_pedido ?? '(sem número)' }}
                             </div>
                         </td>
-                        <td style="font-size:0.875rem; color:var(--slate-600);"><?= e($pedido->unidade->nome ?? '—') ?></td>
-                        <td style="font-size:0.875rem; color:var(--slate-500);"><?= e($pedido->created_at->format('d/m/Y H:i')) ?></td>
+                        <td style="font-size:0.875rem; color:var(--slate-600);">{{ $pedido->unidade->nome ?? '—' }}</td>
+                        <td style="font-size:0.875rem; color:var(--slate-500);">{{ $pedido->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <span class="status-badge-hist <?= e($statusBadgeClasses[$pedido->status] ?? 'sb-default') ?>">
-                                <?= e($pedido->status) ?>
+                            <span class="status-badge-hist {{ $statusBadgeClasses[$pedido->status] ?? 'sb-default' }}">
+                                {{ $pedido->status }}
                             </span>
                         </td>
                         <td style="text-align:right;">
                             <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.5rem;">
-                                <?php  $isPendente = strtolower($pedido->status) === 'pendente' && $isAdminOrComprador;  ?>
-                                <a href="<?= e(route('pedidos.show', $pedido->id)) ?>"
-                                   class="view-action <?= e($isPendente ? 'view-action-process' : 'view-action-default') ?>">
-                                    <?= e($isPendente ? 'Processar' : 'Visualizar') ?>
+                                @php $isPendente = strtolower($pedido->status) === 'pendente' && $isAdminOrComprador; @endphp
+                                <a href="{{ route('pedidos.show', $pedido->id) }}"
+                                   class="view-action {{ $isPendente ? 'view-action-process' : 'view-action-default' }}">
+                                    {{ $isPendente ? 'Processar' : 'Visualizar' }}
                                     <i class="fas fa-arrow-right" style="font-size:0.7rem;"></i>
                                 </a>
-                                <?php if ($isAdminOrComprador): ?>
-                                    <form action="<?= e(route('pedidos.destroy', $pedido->id)) ?>" method="POST" class="d-inline"
-                                          onsubmit="return confirm('O pedido #<?= e($pedido->numero_pedido) ?> será excluído permanentemente. Esta ação não pode ser desfeita.');">
-                                        <input type="hidden" name="_token" value="<?= csrf_token() ?>">
-                                        <input type="hidden" name="_method" value="DELETE">
+                                @if($isAdminOrComprador)
+                                    <form action="{{ route('pedidos.destroy', $pedido->id) }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('O pedido #{{ $pedido->numero_pedido }} será excluído permanentemente. Esta ação não pode ser desfeita.');">
+                                        @csrf
+                                        @method('DELETE')
                                         <button type="submit" class="delete-action" title="Excluir pedido">
                                             <i class="fas fa-trash" style="font-size:0.8rem;"></i>
                                         </button>
                                     </form>
-                                <?php endif; ?>
+                                @endif
                             </div>
                         </td>
                     </tr>
-                <?php endforeach; else: ?>
+                @empty
                     <tr>
                         <td colspan="5">
                             <div class="empty-state">
@@ -238,22 +239,21 @@ include __DIR__ . '/../layouts/header.php';
                             </div>
                         </td>
                     </tr>
-                <?php endif; ?>
+                @endforelse
             </tbody>
         </table>
     </div>
 
-    <?php if ($pedidos->count() > 0): ?>
+    @if($pedidos->count() > 0)
         <div style="padding:0.75rem 1.5rem; border-top:1px solid var(--slate-50); font-size:0.75rem; color:var(--slate-400);">
-            <?= e($pedidos->total()) ?> pedido<?= e($pedidos->total() !== 1 ? 's' : '') ?> exibido<?= e($pedidos->total() !== 1 ? 's' : '') ?>
+            {{ $pedidos->total() }} pedido{{ $pedidos->total() !== 1 ? 's' : '' }} exibido{{ $pedidos->total() !== 1 ? 's' : '' }}
         </div>
-    <?php endif; ?>
+    @endif
 
-    <?php if ($pedidos->hasPages()): ?>
+    @if($pedidos->hasPages())
         <div style="padding:0.75rem 1.5rem; border-top:1px solid var(--slate-100); display:flex; justify-content:center;">
-            <?= e($pedidos->withQueryString()->links('pagination::bootstrap-5')) ?>
+            {{ $pedidos->withQueryString()->links('pagination::bootstrap-5') }}
         </div>
-    <?php endif; ?>
+    @endif
 </div>
-
-<?php include __DIR__ . '/../layouts/footer.php'; ?>
+@endsection
