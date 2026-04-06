@@ -19,6 +19,10 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 # Allow .htaccess overrides
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
+# Railway uses dynamic PORT - configure Apache to listen on it
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
+RUN sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/000-default.conf
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -38,7 +42,8 @@ RUN chown -R www-data:www-data /var/www/html \
 # Create storage link
 RUN php artisan storage:link 2>/dev/null || true
 
-# Expose port 80
+# Default port (Railway overrides this)
+ENV PORT=80
 EXPOSE 80
 
 # Startup script
