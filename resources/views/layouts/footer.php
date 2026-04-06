@@ -1,4 +1,3 @@
-('content')
     </div>
 
     <!-- Bootstrap 5.3 JS -->
