@@ -8,8 +8,11 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Fix MPM conflict and enable mod_rewrite
-RUN a2dismod mpm_event && a2enmod mpm_prefork && a2enmod rewrite
+# Fix MPM conflict: remove event MPM, keep prefork only
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* \
+    && ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
+    && ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+    && a2enmod rewrite
 
 # Set Apache document root to Laravel public folder
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
