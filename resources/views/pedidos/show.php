@@ -1,5 +1,5 @@
 <?php 
-$__title = 'Pedido #' . ($pedido->numero_pedido ?? 'Novo';
+$__title = 'Pedido #' . ($pedido->numero_pedido ?? 'Novo');
 ob_start();
  ?>
 <style>
@@ -279,7 +279,7 @@ include __DIR__ . '/../layouts/header.php';
                         </span>
                     <?php endforeach; else: ?>
                         <span class="text-muted small">Nenhuma</span>
-                    <?php endfor; ?>else
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -518,7 +518,7 @@ endif; ?>
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">Nenhum item cadastrado neste pedido.</td>
                     </tr>
-                <?php endfor; ?>else
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -554,7 +554,7 @@ endif; ?>
                         </div>
                     <?php endforeach; else: ?>
                         <p class="text-muted text-center pt-3">Nenhum evento registrado.</p>
-                    <?php endfor; ?>else
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

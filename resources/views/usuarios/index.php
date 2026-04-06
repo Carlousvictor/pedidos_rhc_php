@@ -438,7 +438,7 @@ include __DIR__ . '/../layouts/header.php';
                             </div>
                         </td>
                     </tr>
-                <?php endfor; ?>else
+                <?php endif; ?>
             </tbody>
         </table>
     </div>

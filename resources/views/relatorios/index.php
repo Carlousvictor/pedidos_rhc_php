@@ -292,7 +292,7 @@ include __DIR__ . '/../layouts/header.php';
                         <tr>
                             <td colspan="3" style="text-align:center; padding:2rem; color:var(--slate-400);">Nenhum dado encontrado.</td>
                         </tr>
-                    <?php endfor; ?>else
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -320,7 +320,7 @@ include __DIR__ . '/../layouts/header.php';
                 </div>
             <?php endforeach; else: ?>
                 <p style="text-align:center; padding:2rem 0; color:var(--slate-400);">Nenhum dado encontrado.</p>
-            <?php endfor; ?>else
+            <?php endif; ?>
         </div>
     </div>
 </div>
