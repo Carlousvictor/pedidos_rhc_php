@@ -1,5 +1,6 @@
 <?php
 $__title = 'Pedidos - RHC Pedidos';
+$__noScroll = true;
 ob_start();
 ?>
 <style>
@@ -7,8 +8,8 @@ ob_start();
     .stat-cards {
         display: grid;
         grid-template-columns: repeat(6, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+        gap: 0.625rem;
+        margin-bottom: 0.75rem;
     }
     @media (max-width: 1024px) {
         .stat-cards { grid-template-columns: repeat(3, 1fr); }
@@ -18,10 +19,10 @@ ob_start();
     }
     .stat-card {
         background: var(--white);
-        border-radius: 0.75rem;
+        border-radius: 0.625rem;
         border: 1px solid var(--slate-100);
         box-shadow: 0 1px 3px rgba(0,0,0,.06);
-        padding: 1.25rem;
+        padding: 0.75rem;
         cursor: pointer;
         transition: border-color 0.15s, box-shadow 0.15s;
         text-decoration: none;
@@ -36,30 +37,30 @@ ob_start();
         box-shadow: 0 0 0 2px rgba(0,26,114,0.15);
     }
     .stat-icon {
-        width: 2.25rem;
-        height: 2.25rem;
-        border-radius: 0.5rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.375rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.875rem;
-        margin-bottom: 0.75rem;
+        font-size: 0.75rem;
+        margin-bottom: 0.375rem;
     }
     .stat-number {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--slate-900);
         line-height: 1;
     }
     .stat-label {
-        font-size: 0.75rem;
+        font-size: 0.675rem;
         color: var(--slate-500);
-        margin-top: 0.25rem;
+        margin-top: 0.125rem;
     }
     .stat-bar {
-        height: 0.375rem;
+        height: 0.25rem;
         border-radius: 9999px;
-        margin-top: 0.75rem;
+        margin-top: 0.5rem;
         background: var(--slate-100);
         overflow: hidden;
     }
@@ -71,25 +72,19 @@ ob_start();
 
     /* Module cards */
     .module-cards {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    @media (max-width: 1024px) {
-        .module-cards { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (max-width: 640px) {
-        .module-cards { grid-template-columns: repeat(2, 1fr); }
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
     }
     .module-card {
         background: var(--white);
         border: 1px solid var(--slate-100);
-        border-radius: 0.75rem;
-        padding: 1.25rem;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.875rem;
         text-decoration: none;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         text-align: center;
         gap: 0.5rem;
@@ -104,17 +99,17 @@ ob_start();
         color: var(--white);
     }
     .module-icon {
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 0.5rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 0.375rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 0.8rem;
         transition: background-color 0.15s, color 0.15s;
     }
     .module-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
         color: var(--slate-700);
     }
@@ -122,9 +117,9 @@ ob_start();
     /* Search bar */
     .search-bar {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.5rem;
         align-items: end;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0.625rem;
         flex-wrap: wrap;
     }
     .search-input-wrap {
@@ -207,7 +202,7 @@ include __DIR__ . '/../layouts/header.php';
  ?>
 
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.625rem;">
     <div>
         <h1 style="font-size:1.25rem; font-weight:700; color:var(--slate-900); margin:0;">
             <i class="fas fa-clipboard-list" style="margin-right:0.5rem; color:var(--navy);"></i>Pedidos
@@ -334,10 +329,10 @@ include __DIR__ . '/../layouts/header.php';
 </form>
 
 
-<div class="rhc-card" style="overflow:hidden;">
-    <div class="rhc-table-wrap">
-        <table class="rhc-table">
-            <thead>
+<div class="rhc-card" style="overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:0;">
+    <div class="rhc-table-wrap" style="flex:1; overflow-y:auto; min-height:0;">
+        <table class="rhc-table" style="position:relative;">
+            <thead style="position:sticky; top:0; z-index:2; background:var(--slate-50);">
                 <tr>
                     <th>Nº Pedido</th>
                     <th>Status</th>
@@ -393,31 +388,29 @@ include __DIR__ . '/../layouts/header.php';
             </tbody>
         </table>
     </div>
-</div>
-
-
-<?php if ($pedidos->hasPages()): ?>
-<div class="rhc-pagination">
-    <?php if ($pedidos->onFirstPage()): ?>
-        <span class="disabled-page"><i class="fas fa-chevron-left fa-xs"></i></span>
-    <?php else: ?>
-        <a href="<?= e($pedidos->previousPageUrl()) ?>"><i class="fas fa-chevron-left fa-xs"></i></a>
-    <?php endif; ?>
-
-    <?php foreach ($pedidos->getUrlRange(1, $pedidos->lastPage()) as $page => $url): ?>
-        <?php if ($page == $pedidos->currentPage()): ?>
-            <span class="active-page"><?= e($page) ?></span>
+    <?php if ($pedidos->hasPages()): ?>
+    <div class="rhc-pagination" style="flex-shrink:0; margin:0; padding:0.375rem 0; border-top:1px solid var(--slate-100);">
+        <?php if ($pedidos->onFirstPage()): ?>
+            <span class="disabled-page"><i class="fas fa-chevron-left fa-xs"></i></span>
         <?php else: ?>
-            <a href="<?= e($url) ?>"><?= e($page) ?></a>
+            <a href="<?= e($pedidos->previousPageUrl()) ?>"><i class="fas fa-chevron-left fa-xs"></i></a>
         <?php endif; ?>
-    <?php endforeach; ?>
 
-    <?php if ($pedidos->hasMorePages()): ?>
-        <a href="<?= e($pedidos->nextPageUrl()) ?>"><i class="fas fa-chevron-right fa-xs"></i></a>
-    <?php else: ?>
-        <span class="disabled-page"><i class="fas fa-chevron-right fa-xs"></i></span>
+        <?php foreach ($pedidos->getUrlRange(1, $pedidos->lastPage()) as $page => $url): ?>
+            <?php if ($page == $pedidos->currentPage()): ?>
+                <span class="active-page"><?= e($page) ?></span>
+            <?php else: ?>
+                <a href="<?= e($url) ?>"><?= e($page) ?></a>
+            <?php endif; ?>
+        <?php endforeach; ?>
+
+        <?php if ($pedidos->hasMorePages()): ?>
+            <a href="<?= e($pedidos->nextPageUrl()) ?>"><i class="fas fa-chevron-right fa-xs"></i></a>
+        <?php else: ?>
+            <span class="disabled-page"><i class="fas fa-chevron-right fa-xs"></i></span>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
 </div>
-<?php endif; ?>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

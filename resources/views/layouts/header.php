@@ -47,21 +47,26 @@
             --purple-500: #a855f7;
         }
 
+        html, body {
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg);
             color: var(--slate-900);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ===== NAVBAR ===== */
         .rhc-navbar {
             height: 64px;
             background-color: var(--navy);
-            position: sticky;
-            top: 0;
+            flex-shrink: 0;
             z-index: 50;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1);
             display: flex;
@@ -233,7 +238,17 @@
             max-width: 1400px;
             width: 100%;
             margin: 0 auto;
-            padding: 1.5rem 2rem;
+            padding: 1rem 2rem;
+        }
+        .rhc-page-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .rhc-page-body.no-scroll {
+            overflow: hidden;
         }
 
         /* ===== CARDS ===== */
@@ -364,8 +379,8 @@
             background: var(--slate-50);
         }
         .rhc-table th {
-            padding: 0.875rem 1.5rem;
-            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--slate-500);
             text-transform: uppercase;
@@ -374,8 +389,8 @@
             border-bottom: 1px solid var(--slate-100);
         }
         .rhc-table td {
-            padding: 0.875rem 1.5rem;
-            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
             color: var(--slate-600);
             border-bottom: 1px solid var(--slate-100);
             vertical-align: middle;
@@ -646,7 +661,7 @@
     </nav>
 
     <!-- Flash Messages -->
-    <div class="rhc-main" style="padding-bottom: 0;">
+    <div class="rhc-main" style="padding-bottom: 0; padding-top: 0.5rem; flex-shrink:0;">
         <?php if (session('success')): ?>
             <div class="rhc-flash rhc-flash-success">
                 <i class="fas fa-check-circle"></i> <?= e(session('success')) ?>
@@ -665,5 +680,6 @@
     </div>
 
     <!-- Main Content -->
-    <div class="rhc-main">
+    <div class="rhc-page-body <?= !empty($__noScroll) ? 'no-scroll' : '' ?>">
+    <div class="rhc-main" style="flex:1; display:flex; flex-direction:column; min-height:0;">
         
