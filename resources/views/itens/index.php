@@ -42,15 +42,17 @@ ob_start();
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.5rem;
         border-top: 1px solid var(--slate-100);
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         color: var(--slate-500);
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
     .pagination-modern .page-btns {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.375rem;
     }
     .pagination-modern .page-btn {
         padding: 0.375rem 0.75rem;
@@ -59,11 +61,28 @@ ob_start();
         background: white;
         color: var(--slate-700);
         text-decoration: none;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         transition: background 0.15s;
     }
     .pagination-modern .page-btn:hover { background: var(--slate-50); }
     .pagination-modern .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+    .pagination-modern .page-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+    .per-page-select {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.8rem;
+        color: var(--slate-500);
+    }
+    .per-page-select select {
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--slate-200);
+        border-radius: 0.375rem;
+        font-size: 0.8rem;
+        color: var(--slate-700);
+        background: white;
+        cursor: pointer;
+    }
     .filter-count {
         font-size: 0.75rem;
         background: var(--slate-100);
@@ -196,26 +215,61 @@ include __DIR__ . '/../layouts/header.php';
     </div>
 
     
-    <?php if ($itens->hasPages()): ?>
-        <div class="pagination-modern">
-            <span>
-                Exibindo <?= e($itens->firstItem()) ?>–<?= e($itens->lastItem()) ?> de <?= e(number_format($itens->total(), 0, ',', '.')) ?>
-            </span>
-            <div class="page-btns">
-                <?php if ($itens->onFirstPage()): ?>
-                    <span class="page-btn disabled">Anterior</span>
-                <?php else: ?>
-                    <a href="<?= e($itens->previousPageUrl()) ?>" class="page-btn">Anterior</a>
-                <?php endif; ?>
-                <span style="padding:0 0.5rem;"><?= e($itens->currentPage()) ?> / <?= e($itens->lastPage()) ?></span>
-                <?php if ($itens->hasMorePages()): ?>
-                    <a href="<?= e($itens->nextPageUrl()) ?>" class="page-btn">Próxima</a>
-                <?php else: ?>
-                    <span class="page-btn disabled">Próxima</span>
-                <?php endif; ?>
-            </div>
+    <div class="pagination-modern">
+        <span>
+            Exibindo <?= e($itens->firstItem() ?? 0) ?>–<?= e($itens->lastItem() ?? 0) ?> de <?= e(number_format($itens->total(), 0, ',', '.')) ?>
+        </span>
+
+        <div class="per-page-select">
+            <span>Exibir</span>
+            <select onchange="window.location.href=this.value">
+                <?php foreach ([25, 50, 100, 200] as $pp): ?>
+                    <?php $ppUrl = request()->fullUrlWithQuery(['per_page' => $pp, 'page' => 1]); ?>
+                    <option value="<?= e($ppUrl) ?>" <?= e($itens->perPage() == $pp ? 'selected' : '') ?>><?= e($pp) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span>por página</span>
         </div>
-    <?php endif; ?>
+
+        <?php if ($itens->hasPages()): ?>
+        <div class="page-btns">
+            <?php if ($itens->onFirstPage()): ?>
+                <span class="page-btn disabled"><i class="fas fa-chevron-left fa-xs"></i></span>
+            <?php else: ?>
+                <a href="<?= e($itens->previousPageUrl()) ?>" class="page-btn"><i class="fas fa-chevron-left fa-xs"></i></a>
+            <?php endif; ?>
+
+            <?php
+                $current = $itens->currentPage();
+                $last = $itens->lastPage();
+                $range = [];
+                // Always show first, last, and pages around current
+                for ($i = 1; $i <= $last; $i++) {
+                    if ($i === 1 || $i === $last || abs($i - $current) <= 2) {
+                        $range[] = $i;
+                    } elseif (end($range) !== '...') {
+                        $range[] = '...';
+                    }
+                }
+            ?>
+            <?php foreach ($range as $page): ?>
+                <?php if ($page === '...'): ?>
+                    <span class="page-btn disabled" style="border:none; opacity:0.6;">…</span>
+                <?php elseif ($page == $current): ?>
+                    <span class="page-btn active"><?= e($page) ?></span>
+                <?php else: ?>
+                    <a href="<?= e($itens->url($page)) ?>" class="page-btn"><?= e($page) ?></a>
+                <?php endif; ?>
+            <?php endforeach; ?>
+
+            <?php if ($itens->hasMorePages()): ?>
+                <a href="<?= e($itens->nextPageUrl()) ?>" class="page-btn"><i class="fas fa-chevron-right fa-xs"></i></a>
+            <?php else: ?>
+                <span class="page-btn disabled"><i class="fas fa-chevron-right fa-xs"></i></span>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 </div>
 
 

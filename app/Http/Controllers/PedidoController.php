@@ -624,7 +624,7 @@ class PedidoController extends Controller
             $pdf = $parser->parseFile($request->file('file')->getRealPath());
             $text = $pdf->getText();
 
-            // Get all known item codes from the database
+            // Get all known item codes from the database (indexed by codigo)
             $allItems = Item::pluck('codigo')->toArray();
             $codigoSet = array_flip(array_map('trim', $allItems));
 
@@ -640,40 +640,125 @@ class PedidoController extends Controller
                 }
             }
 
-            // Strategy 1: Look for lines that contain a known codigo followed by a number (quantity)
-            // Common PDF formats: "CODIGO PRODUTO QTD VALOR" or tabular data
+            // Detect MV2000/MVSoul format: "Relatório de Solicitação de Compras" or "MV2000"
+            $isMV = false;
             foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line)) continue;
+                if (preg_match('/MV2000|MVSoul|Solicita[çc][aã]o de Compras/i', $line)) {
+                    $isMV = true;
+                    break;
+                }
+            }
 
-                // Try to find known codes in the line
-                foreach ($codigoSet as $codigo => $_) {
-                    $codigoStr = (string) $codigo;
-                    if (empty($codigoStr)) continue;
+            if ($isMV) {
+                // MV2000/MVSoul PDF parsing strategy
+                // The PDF parser extracts table columns vertically per page:
+                // First a block of product CODES (one per line, 4-5 digit numbers),
+                // then descriptions, then QUANTITIES (Brazilian format like "500,00"),
+                // then units, then sequence numbers, etc.
+                // We need to pair codes with quantities by their positional order.
 
-                    // Check if this code appears in the line
-                    if (strpos($line, $codigoStr) !== false) {
-                        // Extract quantity: look for numbers near the code
-                        // Pattern: code ... number (quantity) ... optional price
-                        $pattern = '/' . preg_quote($codigoStr, '/') . '.*?(\d+)(?:\s|$)/';
-                        if (preg_match($pattern, $line, $qm)) {
-                            $qty = (int) $qm[1];
-                            if ($qty > 0 && $qty < 100000) {
-                                // Try to extract unit price (R$ X,XX pattern)
-                                $vu = 0;
-                                if (preg_match('/R\$\s*([\d.]+,[\d]+)/', $line, $vm)) {
-                                    $vu = (float) str_replace(['.', ','], ['', '.'], $vm[1]);
-                                }
+                // Process each page separately to maintain code-quantity pairing
+                $pages = $pdf->getPages();
 
-                                if (!isset($itens[$codigoStr])) {
-                                    $itens[$codigoStr] = [
-                                        'codigo' => $codigoStr,
-                                        'quantidade' => $qty,
-                                        'fornecedor' => $fornecedor,
-                                        'valor_unitario' => $vu,
-                                    ];
-                                } else {
-                                    $itens[$codigoStr]['quantidade'] += $qty;
+                foreach ($pages as $page) {
+                    $pageText = $page->getText();
+                    $pageLines = preg_split('/\r?\n/', $pageText);
+
+                    // Phase 1: Find the block of product codes
+                    // Codes are standalone lines with 4-5 digit numbers
+                    // Accept any 4-5 digit number to avoid breaking the block detection
+                    $pageCodes = [];
+                    $codeBlockStarted = false;
+
+                    foreach ($pageLines as $line) {
+                        $line = trim($line);
+                        if (empty($line)) continue;
+
+                        if (preg_match('/^\d{4,5}$/', $line)) {
+                            $pageCodes[] = $line;
+                            $codeBlockStarted = true;
+                        } elseif ($codeBlockStarted && count($pageCodes) > 0) {
+                            break;
+                        }
+                    }
+
+                    if (empty($pageCodes)) continue;
+
+                    // Phase 2: Find the first block of Brazilian decimal numbers (quantities)
+                    // These appear as lines like " 500,00" or " 3.000,00"
+                    $pageQtys = [];
+                    $qtyBlockStarted = false;
+
+                    foreach ($pageLines as $line) {
+                        $trimmed = trim($line);
+                        if (empty($trimmed)) continue;
+
+                        // Skip code lines
+                        if (preg_match('/^\d{4,5}$/', $trimmed)) continue;
+
+                        if (preg_match('/^\s*\d{1,3}(?:\.\d{3})*,\d{2}\s*$/', $line)) {
+                            $val = (float) str_replace(['.', ','], ['', '.'], $trimmed);
+                            $pageQtys[] = $val;
+                            $qtyBlockStarted = true;
+                        } elseif ($qtyBlockStarted && count($pageQtys) > 0) {
+                            if (count($pageQtys) >= count($pageCodes)) {
+                                break;
+                            }
+                            // Block interrupted before having enough quantities — reset and keep looking
+                            $qtyBlockStarted = false;
+                            $pageQtys = [];
+                        }
+                    }
+
+                    // Phase 3: Pair codes with quantities by position (only known codes)
+                    $pairCount = min(count($pageCodes), count($pageQtys));
+                    for ($i = 0; $i < $pairCount; $i++) {
+                        $code = $pageCodes[$i];
+                        $qty = (int) $pageQtys[$i];
+
+                        if ($qty > 0 && isset($codigoSet[$code]) && !isset($itens[$code])) {
+                            $itens[$code] = [
+                                'codigo' => $code,
+                                'quantidade' => $qty,
+                                'fornecedor' => $fornecedor,
+                                'valor_unitario' => 0,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Generic strategy (non-MV or if MV found nothing)
+            if (empty($itens)) {
+                // Strategy 1: Look for lines that contain a known codigo followed by a number (quantity)
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line)) continue;
+
+                    foreach ($codigoSet as $codigo => $_) {
+                        $codigoStr = (string) $codigo;
+                        if (empty($codigoStr)) continue;
+
+                        if (strpos($line, $codigoStr) !== false) {
+                            $pattern = '/' . preg_quote($codigoStr, '/') . '.*?(\d+)(?:\s|$)/';
+                            if (preg_match($pattern, $line, $qm)) {
+                                $qty = (int) $qm[1];
+                                if ($qty > 0 && $qty < 100000) {
+                                    $vu = 0;
+                                    if (preg_match('/R\$\s*([\d.]+,[\d]+)/', $line, $vm)) {
+                                        $vu = (float) str_replace(['.', ','], ['', '.'], $vm[1]);
+                                    }
+
+                                    if (!isset($itens[$codigoStr])) {
+                                        $itens[$codigoStr] = [
+                                            'codigo' => $codigoStr,
+                                            'quantidade' => $qty,
+                                            'fornecedor' => $fornecedor,
+                                            'valor_unitario' => $vu,
+                                        ];
+                                    } else {
+                                        $itens[$codigoStr]['quantidade'] += $qty;
+                                    }
                                 }
                             }
                         }
@@ -681,41 +766,33 @@ class PedidoController extends Controller
                 }
             }
 
-            // Strategy 2: If strategy 1 found nothing, try broader pattern matching
-            // Look for any number sequences that match codes
+            // Strategy 2: If still nothing, try broader pattern matching
             if (empty($itens)) {
                 $fullText = implode(' ', $lines);
                 foreach ($codigoSet as $codigo => $_) {
                     $codigoStr = (string) $codigo;
                     if (empty($codigoStr) || strlen($codigoStr) < 2) continue;
 
-                    // Count occurrences and try to find associated quantities
-                    $count = substr_count($fullText, $codigoStr);
-                    if ($count > 0) {
-                        // Find all contexts where this code appears
-                        $offset = 0;
-                        while (($pos = strpos($fullText, $codigoStr, $offset)) !== false) {
-                            // Get surrounding text (200 chars after code)
-                            $context = substr($fullText, $pos, 200);
-                            // Look for first standalone number after the code
-                            if (preg_match('/^' . preg_quote($codigoStr, '/') . '\D+?(\d{1,5})/', $context, $cm)) {
-                                $qty = (int) $cm[1];
-                                if ($qty > 0 && $qty < 100000) {
-                                    $vu = 0;
-                                    if (preg_match('/R\$\s*([\d.]+,[\d]+)/', $context, $vm)) {
-                                        $vu = (float) str_replace(['.', ','], ['', '.'], $vm[1]);
-                                    }
-                                    $itens[$codigoStr] = [
-                                        'codigo' => $codigoStr,
-                                        'quantidade' => $qty,
-                                        'fornecedor' => $fornecedor,
-                                        'valor_unitario' => $vu,
-                                    ];
-                                    break;
+                    $offset = 0;
+                    while (($pos = strpos($fullText, $codigoStr, $offset)) !== false) {
+                        $context = substr($fullText, $pos, 200);
+                        if (preg_match('/^' . preg_quote($codigoStr, '/') . '\D+?(\d{1,5})/', $context, $cm)) {
+                            $qty = (int) $cm[1];
+                            if ($qty > 0 && $qty < 100000) {
+                                $vu = 0;
+                                if (preg_match('/R\$\s*([\d.]+,[\d]+)/', $context, $vm)) {
+                                    $vu = (float) str_replace(['.', ','], ['', '.'], $vm[1]);
                                 }
+                                $itens[$codigoStr] = [
+                                    'codigo' => $codigoStr,
+                                    'quantidade' => $qty,
+                                    'fornecedor' => $fornecedor,
+                                    'valor_unitario' => $vu,
+                                ];
+                                break;
                             }
-                            $offset = $pos + strlen($codigoStr);
                         }
+                        $offset = $pos + strlen($codigoStr);
                     }
                 }
             }

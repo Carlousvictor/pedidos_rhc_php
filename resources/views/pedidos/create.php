@@ -554,6 +554,122 @@ document.addEventListener('DOMContentLoaded', function() {
         e.target.value = '';
     });
 
+    // ── PDF Import (MV2000 / MVSoul) ──
+    document.getElementById('pdfImport').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var resultEl = document.getElementById('importResult');
+        var resultText = document.getElementById('importResultText');
+        resultEl.style.background = '#eff6ff';
+        resultEl.style.borderColor = '#bfdbfe';
+        resultEl.style.color = '#1e40af';
+        resultText.textContent = 'Processando PDF, aguarde...';
+        resultEl.style.display = '';
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/pedidos/parse-pdf', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: formData
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                resultEl.style.background = '#fef2f2';
+                resultEl.style.borderColor = '#fecaca';
+                resultEl.style.color = '#991b1b';
+                resultText.textContent = data.error;
+                return;
+            }
+
+            if (!data.itens || data.itens.length === 0) {
+                resultEl.style.background = '#fffbeb';
+                resultEl.style.borderColor = '#fde68a';
+                resultEl.style.color = '#92400e';
+                resultText.textContent = 'Nenhum item reconhecido no PDF. Verifique se os códigos estão cadastrados no sistema.';
+                return;
+            }
+
+            // Match parsed codes to database items
+            var codigos = data.itens.map(function(i) { return i.codigo; });
+
+            fetch('/itens/buscar?q=&all=1', {
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(allItems) {
+                var foundCount = 0;
+                var notFound = [];
+
+                data.itens.forEach(function(pdfItem) {
+                    var codigo = String(pdfItem.codigo).trim();
+                    var quantidade = parseInt(pdfItem.quantidade) || 1;
+
+                    var matched = allItems.find(function(i) { return String(i.codigo).trim() === codigo; });
+                    if (matched && !addedItems[matched.id]) {
+                        addedItems[matched.id] = matched;
+                        window.addedItems[matched.id] = matched;
+                        emptyRow.style.display = 'none';
+
+                        var idx = itemIndex++;
+                        var tipoCls = tipoClasses[matched.tipo] || 'tipo-default';
+                        var tr = document.createElement('tr');
+                        tr.id = 'itemRow-' + matched.id;
+                        tr.innerHTML = ''
+                            + '<td style="font-family:ui-monospace,monospace; font-size:0.8rem; color:var(--slate-600);">' + escapeHtml(matched.codigo || '') + '</td>'
+                            + '<td><div class="item-icon-cell"><div class="item-icon-box"><i class="fas fa-box"></i></div>'
+                            + '<span style="font-size:0.875rem; color:var(--slate-900);">' + escapeHtml(matched.nome) + '</span></div></td>'
+                            + '<td>' + (matched.tipo ? '<span class="tipo-badge-sm ' + tipoCls + '">' + escapeHtml(matched.tipo) + '</span>' : '<span style="color:var(--slate-400);">—</span>') + '</td>'
+                            + '<td style="text-align:center;">'
+                            + '  <span class="qty-display" style="font-weight:700; font-size:1rem; color:var(--slate-900); cursor:pointer;"'
+                            + '    onclick="openItemModal(addedItems[\'' + matched.id + '\'], \'edit\', ' + quantidade + ')" title="Clique para alterar">' + quantidade + '</span>'
+                            + '  <input type="hidden" name="itens[' + idx + '][quantidade]" value="' + quantidade + '">'
+                            + '  <input type="hidden" name="itens[' + idx + '][item_id]" value="' + matched.id + '">'
+                            + '</td>'
+                            + '<td style="text-align:center;">'
+                            + '  <button type="button" class="btn-remove" data-item-id="' + matched.id + '"'
+                            + '    style="padding:0.375rem; color:var(--red-500); background:none; border:none; cursor:pointer; border-radius:0.375rem;"'
+                            + '    onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'none\'">'
+                            + '    <i class="fas fa-trash" style="font-size:0.75rem;"></i></button></td>';
+                        itensBody.appendChild(tr);
+                        foundCount++;
+                    } else if (!matched) {
+                        notFound.push(codigo);
+                    }
+                });
+
+                updateSubmitButton();
+
+                var msg = foundCount + ' ite' + (foundCount === 1 ? 'm importado' : 'ns importados') + ' do PDF.';
+                if (notFound.length > 0) {
+                    msg += ' ' + notFound.length + ' código(s) não encontrado(s): ' + notFound.slice(0, 10).join(', ') + (notFound.length > 10 ? '...' : '');
+                    resultEl.style.background = '#fffbeb';
+                    resultEl.style.borderColor = '#fde68a';
+                    resultEl.style.color = '#92400e';
+                } else {
+                    resultEl.style.background = '#ecfdf5';
+                    resultEl.style.borderColor = '#a7f3d0';
+                    resultEl.style.color = '#065f46';
+                }
+                resultText.textContent = msg;
+            });
+        })
+        .catch(function(err) {
+            resultEl.style.background = '#fef2f2';
+            resultEl.style.borderColor = '#fecaca';
+            resultEl.style.color = '#991b1b';
+            resultText.textContent = 'Erro ao processar PDF: ' + err.message;
+        });
+
+        e.target.value = '';
+    });
+
     // ── CSV Download ──
     window.downloadCsv = function() {
         var items = Object.values(addedItems);
@@ -688,6 +804,10 @@ include __DIR__ . '/../layouts/header.php';
             <label class="rhc-btn rhc-btn-ghost rhc-btn-sm" style="cursor:pointer; margin:0;">
                 <i class="fas fa-file-excel" style="margin-right:0.25rem; color:#059669;"></i> Importar Excel
                 <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none;">
+            </label>
+            <label class="rhc-btn rhc-btn-ghost rhc-btn-sm" style="cursor:pointer; margin:0;">
+                <i class="fas fa-file-pdf" style="margin-right:0.25rem; color:#dc2626;"></i> Importar PDF
+                <input type="file" id="pdfImport" accept=".pdf" style="display:none;">
             </label>
             <button type="button" class="rhc-btn rhc-btn-outline rhc-btn-sm" id="btnDownloadCsv" disabled onclick="downloadCsv()">
                 <i class="fas fa-download" style="margin-right:0.25rem;"></i> Baixar CSV

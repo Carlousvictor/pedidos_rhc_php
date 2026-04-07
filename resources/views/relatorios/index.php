@@ -83,6 +83,155 @@ ob_start();
     .unit-row { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
     .unit-name { font-size: 0.8rem; font-weight: 500; }
     .unit-count { font-size: 0.8rem; color: var(--slate-400); }
+
+    /* ===== PRINT STYLES ===== */
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 15mm 12mm;
+        }
+
+        /* Reset layout constraints */
+        html, body {
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+            font-size: 11px !important;
+        }
+        body {
+            display: block !important;
+        }
+
+        /* Hide non-printable elements */
+        .rhc-navbar,
+        .rhc-flash,
+        .rhc-flash-success,
+        .rhc-flash-error,
+        .rhc-flash-warning,
+        .filter-card,
+        .no-print {
+            display: none !important;
+        }
+
+        /* Remove layout constraints */
+        .rhc-page-body,
+        .rhc-page-body.no-scroll {
+            overflow: visible !important;
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+        }
+        .rhc-main {
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+        }
+
+        /* Print header */
+        .print-header {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #001A72;
+            margin-bottom: 15px;
+        }
+        .print-header-logo {
+            display: flex !important;
+            align-items: center;
+            gap: 10px;
+        }
+        .print-header-logo img { height: 30px; }
+        .print-header-title { font-size: 16px; font-weight: 700; color: #001A72; }
+        .print-header-subtitle { font-size: 11px; color: #64748b; }
+        .print-header-date { font-size: 10px; color: #64748b; text-align: right; }
+
+        /* Cards and sections */
+        .kpi-grid {
+            grid-template-columns: 1fr repeat(4, 1fr) !important;
+            gap: 8px !important;
+            margin-bottom: 12px !important;
+        }
+        .kpi-total {
+            padding: 10px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .kpi-total .kpi-number { font-size: 1.5rem !important; }
+        .kpi-card {
+            padding: 8px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+        }
+        .kpi-card .kpi-value { font-size: 1.125rem !important; }
+        .kpi-bar, .kpi-bar-fill, .funnel-bar, .funnel-bar-fill {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .section-card {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .section-header {
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+        }
+
+        /* Two-column grids */
+        div[style*="grid-template-columns:2fr 1fr"],
+        div[style*="grid-template-columns:1fr 1fr"] {
+            gap: 10px !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* Tables */
+        .rhc-table th { padding: 6px 10px !important; font-size: 9px !important; }
+        .rhc-table td { padding: 5px 10px !important; font-size: 10px !important; }
+
+        /* Rate boxes */
+        .rate-box {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Funnel */
+        .funnel-value { font-size: 12px !important; }
+        .funnel-name { font-size: 11px !important; }
+
+        /* Unit bars */
+        .unit-name, .unit-count { font-size: 10px !important; }
+        div[style*="background:var(--navy)"],
+        div[style*="background:var(--slate-100)"],
+        .kpi-icon, .funnel-num {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Value total card */
+        div[style*="margin-top:1rem"] {
+            margin-top: 10px !important;
+        }
+
+        /* Print footer */
+        .print-footer {
+            display: block !important;
+            margin-top: 15px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 9px;
+            color: #94a3b8;
+            text-align: center;
+        }
+    }
+
+    /* Hide print-only elements on screen */
+    .print-header, .print-footer {
+        display: none;
+    }
 </style>
 <?php $__styles = ob_get_clean();
 include __DIR__ . '/../layouts/header.php';
@@ -102,7 +251,34 @@ include __DIR__ . '/../layouts/header.php';
  ?>
 
 
-<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
+<!-- Print-only header -->
+<div class="print-header">
+    <div class="print-header-logo">
+        <img src="/logo.png" alt="RHC">
+        <div>
+            <div class="print-header-title">Relatório de Pedidos — RHC</div>
+            <div class="print-header-subtitle">
+                <?php if (request('unidade_id')): ?>
+                    <?= e($unidades->firstWhere('id', request('unidade_id'))->nome ?? 'Todas as unidades') ?>
+                <?php else: ?>
+                    Todas as unidades
+                <?php endif; ?>
+                <?php if (request('data_inicio') || request('data_fim')): ?>
+                    &middot;
+                    <?= e(request('data_inicio') ? date('d/m/Y', strtotime(request('data_inicio'))) : '...') ?>
+                    a
+                    <?= e(request('data_fim') ? date('d/m/Y', strtotime(request('data_fim'))) : 'hoje') ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <div class="print-header-date">
+        Emitido em <?= e(date('d/m/Y H:i')) ?><br>
+        <?= e(session('usuario')->nome ?? '') ?>
+    </div>
+</div>
+
+<div class="no-print" style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
     <div>
         <div style="display:flex; align-items:center; gap:0.375rem; font-size:0.75rem; color:var(--slate-400); margin-bottom:0.5rem;">
             <a href="/" style="color:var(--slate-400); text-decoration:none;">Dashboard</a>
@@ -341,6 +517,11 @@ include __DIR__ . '/../layouts/header.php';
             <span style="font-size:0.75rem; color:var(--slate-400);">em pedidos processados</span>
         </div>
     </div>
+</div>
+
+<!-- Print-only footer -->
+<div class="print-footer">
+    RHC Pedidos &mdash; Relatório gerado em <?= e(date('d/m/Y \à\s H:i')) ?> &mdash; Sistema de Gestão de Pedidos Hospitalares
 </div>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

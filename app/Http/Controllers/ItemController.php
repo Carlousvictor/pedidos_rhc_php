@@ -27,8 +27,10 @@ class ItemController extends Controller
             $query->where('tipo', $request->tipo);
         }
 
+        $perPage = in_array((int) $request->input('per_page'), [25, 50, 100, 200]) ? (int) $request->input('per_page') : 50;
+
         $itens = $query->orderBy('nome')
-            ->paginate(50)
+            ->paginate($perPage)
             ->appends($request->query());
 
         // Get distinct tipos for filter dropdown

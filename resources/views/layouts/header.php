@@ -559,6 +559,28 @@
             .grid-6 { grid-template-columns: repeat(2, 1fr); }
             .rhc-main { padding: 1rem; }
         }
+
+        /* Global print styles */
+        @media print {
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+            }
+            body { display: block !important; }
+            .rhc-navbar { display: none !important; }
+            .rhc-page-body, .rhc-page-body.no-scroll {
+                overflow: visible !important;
+                display: block !important;
+                height: auto !important;
+            }
+            .rhc-main {
+                max-width: 100% !important;
+                padding: 0 5mm !important;
+                display: block !important;
+            }
+            .no-print { display: none !important; }
+        }
     </style>
 
     <?= $__styles ?? "" ?>
@@ -681,5 +703,5 @@
 
     <!-- Main Content -->
     <div class="rhc-page-body <?= !empty($__noScroll) ? 'no-scroll' : '' ?>">
-    <div class="rhc-main" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+    <div class="rhc-main" <?= !empty($__noScroll) ? 'style="flex:1; display:flex; flex-direction:column; min-height:0;"' : '' ?>>
         
